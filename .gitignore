@@ -6,7 +6,7 @@ __pycache__/
 *.pyc
 
 # The packaged binary (distributed via GitHub Releases, not committed)
-Converter.exe
+Omnivert.exe
 *.exe
 
 # Downloaded media / output

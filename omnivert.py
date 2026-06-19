@@ -1,7 +1,8 @@
 """
-Personal Video Converter
--------------------------
-Paste an Instagram Reel / YouTube Shorts (or most other) link and download the
+Omnivert
+--------
+Paste a link from Instagram, TikTok, YouTube (Shorts or regular), Twitter/X,
+Reddit (or any of yt-dlp's 1000+ supported sites) and download the
 highest-quality, watermark-free video — or extract just the audio.
 
 Engine: yt-dlp  |  Merge/convert: ffmpeg  |  UI: customtkinter (cobalt-style dark)
@@ -64,12 +65,12 @@ FFMPEG_DIR = find_ffmpeg()
 
 # Single-instance lock / IPC port, and persisted settings.
 LOCK_PORT = 50573
-DEFAULT_OUT = r"H:\Programming\Personal tools\Converter\Outputs"
+DEFAULT_OUT = str(Path.home() / "Downloads" / "Omnivert")
 
 
 def config_path() -> str:
     base = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")),
-                        "Converter")
+                        "Omnivert")
     try:
         os.makedirs(base, exist_ok=True)
     except Exception:
@@ -118,11 +119,11 @@ TEXT = "#f0f0f2"
 # --------------------------------------------------------------------------- #
 # App
 # --------------------------------------------------------------------------- #
-class ConverterApp(ctk.CTk):
+class OmnivertApp(ctk.CTk):
     def __init__(self, lock_sock: socket.socket | None = None):
         super().__init__()
         ctk.set_appearance_mode("dark")
-        self.title("Converter")
+        self.title("Omnivert")
         self.geometry("720x680")
         self.minsize(620, 600)
         self.configure(fg_color=BG)
@@ -162,10 +163,10 @@ class ConverterApp(ctk.CTk):
         # Header
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew", padx=24, pady=(20, 6))
-        ctk.CTkLabel(header, text="Converter",
+        ctk.CTkLabel(header, text="Omnivert",
                      font=ctk.CTkFont(size=26, weight="bold"),
                      text_color=TEXT).pack(side="left")
-        ctk.CTkLabel(header, text="  reels · shorts · video → clean files",
+        ctk.CTkLabel(header, text="  instagram · tiktok · youtube · twitter · reddit",
                      font=ctk.CTkFont(size=13), text_color=SUBTLE).pack(side="left",
                                                                         pady=(8, 0))
 
@@ -215,6 +216,10 @@ class ConverterApp(ctk.CTk):
         ctk.CTkButton(save, text="Browse", width=90, fg_color=FIELD,
                       hover_color=BORDER, text_color=TEXT,
                       command=self._choose_folder).grid(row=0, column=2)
+        self.btn_remember = ctk.CTkButton(
+            save, text="Remember", width=100, fg_color=FIELD, hover_color=BORDER,
+            text_color=TEXT, command=self._remember_path)
+        self.btn_remember.grid(row=0, column=3, padx=(8, 0))
 
         # Progress + log
         self.progress = ctk.CTkProgressBar(self, height=8, corner_radius=4,
@@ -290,7 +295,7 @@ class ConverterApp(ctk.CTk):
     def _cookie_row(self, tab, row):
         wrap = ctk.CTkFrame(tab, fg_color="transparent")
         wrap.grid(row=row, column=0, columnspan=3, sticky="ew", padx=10, pady=(2, 0))
-        ctk.CTkCheckBox(wrap, text="Use browser login (Instagram blocks / private)",
+        ctk.CTkCheckBox(wrap, text="Use browser login (private / blocked / age-restricted)",
                         variable=self.use_cookies, text_color=SUBTLE,
                         fg_color=ACCENT, hover_color=ACCENT_HOVER,
                         font=ctk.CTkFont(size=12)).pack(side="left")
@@ -315,6 +320,17 @@ class ConverterApp(ctk.CTk):
     def _log(self, text):
         self.log.insert("end", text)
         self.log.see("end")
+
+    def _remember_path(self):
+        """Pin the current folder as the default for future launches."""
+        path = self.out_dir.get().strip()
+        if not path:
+            return
+        self._settings["out_dir"] = path
+        save_settings(self._settings)
+        self.status.configure(text=f"Default folder set to {path}")
+        self.btn_remember.configure(text="Saved ✓")
+        self.after(1500, lambda: self.btn_remember.configure(text="Remember"))
 
     def _set_buttons(self, enabled: bool):
         state = "normal" if enabled else "disabled"
@@ -345,7 +361,6 @@ class ConverterApp(ctk.CTk):
             pass
 
     def _on_close(self):
-        save_settings({**self._settings, "out_dir": self.out_dir.get().strip()})
         if self._lock_sock is not None:
             try:
                 self._lock_sock.close()
@@ -364,8 +379,6 @@ class ConverterApp(ctk.CTk):
             return
         out = self.out_dir.get().strip()
         os.makedirs(out, exist_ok=True)
-        save_settings({**self._settings, "out_dir": out})
-        self._settings["out_dir"] = out
 
         self._set_buttons(False)
         self.progress.set(0)
@@ -552,4 +565,4 @@ if __name__ == "__main__":
     lock = acquire_single_instance()
     if lock is None:
         sys.exit(0)  # another instance is already running and was brought forward
-    ConverterApp(lock).mainloop()
+    OmnivertApp(lock).mainloop()
