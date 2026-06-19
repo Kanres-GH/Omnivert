@@ -1,0 +1,20 @@
+# Build artifacts
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+
+# The packaged binary (distributed via GitHub Releases, not committed)
+Converter.exe
+*.exe
+
+# Downloaded media / output
+Outputs/
+
+# Local/editor junk
+_screenshot.png
+.claude/
+.vscode/
+.idea/
+*.log

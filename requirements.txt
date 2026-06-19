@@ -1,0 +1,7 @@
+# Runtime
+yt-dlp>=2025.1.1
+customtkinter>=5.2.2
+
+# Build-time (only needed to (re)build the .exe and icon)
+pillow>=10.0.0
+pyinstaller>=6.0.0
