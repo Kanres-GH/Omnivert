@@ -22,7 +22,9 @@ import collections
 import subprocess
 from pathlib import Path
 
+_T0 = time.perf_counter()
 import webview
+_T_IMPORT = time.perf_counter() - _T0     # cost of importing pywebview (+ pythonnet)
 # yt_dlp is imported lazily (inside probe/_download) so the window paints
 # immediately on launch instead of waiting for its heavy import.
 
@@ -225,7 +227,9 @@ class Api:
     def warm_up(self):
         """Called by the loader. Returns once the UI is truly ready: the bridge
         has answered this round-trip and yt-dlp has finished importing."""
+        log("info", f"startup: UI bridge ready +{time.perf_counter() - _T0:.1f}s")
         self._ytdlp_ready.wait(timeout=30)
+        log("info", f"startup: ready (yt-dlp loaded) +{time.perf_counter() - _T0:.1f}s")
         return True
 
     # ---- dev logs ---------------------------------------------------------- #
@@ -662,22 +666,43 @@ def _unblock_bundle():
     if not getattr(sys, "frozen", False):
         return
     base = os.path.dirname(os.path.abspath(sys.executable))   # the app folder
-    for root, _dirs, files in os.walk(base):
-        for name in files:
-            try:
-                os.remove(os.path.join(root, name) + ":Zone.Identifier")
-            except OSError:
-                pass
+    internal = os.path.join(base, "_internal")
+    marker = os.path.join(internal, ".unblocked")
+    if os.path.exists(marker):
+        return                       # already done on a previous launch
+    # Only managed .NET assemblies are affected by Mark-of-the-Web. They live in
+    # these folders; native DLLs and Python files load in ways that ignore it,
+    # so touching them only makes antivirus re-scan everything on launch.
+    n = 0
+    for sub in ("pythonnet", "webview", "clr_loader"):
+        top = os.path.join(internal, sub)
+        if not os.path.isdir(top):
+            continue
+        for root, _dirs, files in os.walk(top):
+            for name in files:
+                try:
+                    os.remove(os.path.join(root, name) + ":Zone.Identifier")
+                    n += 1
+                except OSError:
+                    pass
+    try:
+        open(marker, "w").close()
+    except OSError:
+        pass
+    log("info", f"startup: unblocked {n} files +{time.perf_counter() - _T0:.1f}s")
 
 
 def main():
+    log("info", f"startup: imports {_T_IMPORT:.1f}s; main reached "
+                f"+{time.perf_counter() - _T0:.1f}s")
     _unblock_bundle()
     lock = acquire_single_instance()
     if lock is None:
         sys.exit(0)
 
     api = Api()
-    log("info", f"Omnivert started (ffmpeg: {'found' if FFMPEG_DIR else 'missing'})")
+    log("info", f"startup: window opening +{time.perf_counter() - _T0:.1f}s "
+                f"(ffmpeg: {'found' if FFMPEG_DIR else 'missing'})")
     window = webview.create_window(
         APP_NAME,
         url=resource_path(os.path.join("web", "index.html")),
