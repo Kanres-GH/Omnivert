@@ -54,6 +54,14 @@
         </div>
 
         <div class="set-block">
+          <label>Developer mode</label>
+          <button class="switch" id="devSwitch" role="switch" aria-checked="false">
+            <span class="switch-track"></span>
+            <span class="switch-thumb"></span>
+          </button>
+        </div>
+
+        <div class="set-block">
           <label>Preferred subtitles (video)</label>
           <div class="select-wrap">
             <select id="subSelect">
@@ -180,6 +188,23 @@
       <p class="modal-text" id="modalText"></p>
       <div class="modal-actions" id="modalActions"></div>
     </div>
+  </div>
+
+  <!-- ===================== Dev mode: button + log panel ===================== -->
+  <button class="dev-btn" id="devBtn" title="Show logs" hidden>
+    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg>
+  </button>
+
+  <div class="dev-panel" id="devPanel" aria-hidden="true">
+    <div class="dev-head">
+      <span class="dev-title">Logs</span>
+      <div class="dev-head-actions">
+        <button id="devCopy" class="dev-mini">Copy</button>
+        <button id="devClear" class="dev-mini">Clear</button>
+        <button id="devClose" class="dev-mini">Close</button>
+      </div>
+    </div>
+    <div class="dev-log" id="devLog"></div>
   </div>
 
   <script src="app.js"></script>

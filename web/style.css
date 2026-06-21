@@ -563,3 +563,78 @@ html[data-theme="light"] .logo-img { filter: invert(1); }
 .btn.danger:hover { filter: brightness(1.08); }
 .btn.primary { background: linear-gradient(135deg, var(--accent-1), var(--accent-2)); color: #fff; }
 .btn.primary:hover { filter: brightness(1.08); }
+
+/* ============================ Dev mode ============================ */
+.dev-btn {
+  position: fixed;
+  left: 14px;
+  bottom: 12px;
+  z-index: 80;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--field-border);
+  background: var(--field);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .2s, background .2s, transform .2s;
+}
+.dev-btn:hover { color: var(--text); background: var(--card-hover); transform: translateY(-1px); }
+.dev-btn[hidden] { display: none; }
+
+.dev-panel {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 62%;
+  z-index: 90;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -14px 40px rgba(0,0,0,.45);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(102%);
+  transition: transform .28s var(--ease);
+}
+.dev-panel.open { transform: translateY(0); }
+.dev-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.dev-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.dev-head-actions { display: flex; gap: 6px; }
+.dev-mini {
+  background: var(--field);
+  border: 1px solid var(--field-border);
+  color: var(--muted);
+  border-radius: 7px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color .2s, background .2s;
+}
+.dev-mini:hover { color: var(--text); background: var(--card-hover); }
+.dev-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 12px 14px;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #cfcfd4;
+  user-select: text;
+}
+.dev-line { white-space: pre-wrap; word-break: break-word; display: flex; gap: 8px; }
+.dev-time { color: var(--faint); flex: none; }
+.dev-line.lvl-error .dev-msg { color: #ff6b6b; }
+.dev-line.lvl-warn  .dev-msg { color: #e6b450; }
+.dev-line.lvl-ok    .dev-msg { color: #4cd07d; }
+.dev-line.lvl-info  .dev-msg { color: #b9b9c2; }
+.dev-empty { color: var(--faint); padding: 6px 0; }

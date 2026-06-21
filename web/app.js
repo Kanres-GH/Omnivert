@@ -142,8 +142,9 @@ async function enqueue() {
     $("#probeSpinner").classList.remove("show");
   }
   if (probe && probe.ok === false) {
-    await alertDialog("Invalid link",
-      probe.error || "Video doesn't exist. Please put in a valid link.");
+    await alertDialog("Couldn't load that link",
+      (probe.error || "Please check the link.") +
+      " If the link is valid, try again — sites occasionally rate-limit.");
     return;
   }
   if (probe && probe.ok) lastProbe = probe;
@@ -354,6 +355,52 @@ async function loadSettings() {
   $("#metaSwitch").setAttribute("aria-checked", !!s.disable_metadata);
   $("#subSelect").value = s.subtitles || "none";
   $("#outPath").value = s.out_dir || "";
+  setDevMode(!!s.dev_mode);
+}
+
+/* ============================ dev mode / logs ============================ */
+let logLastId = 0;
+let logTimer = null;
+
+function setDevMode(on) {
+  $("#devSwitch").setAttribute("aria-checked", on);
+  $("#devBtn").hidden = !on;
+  if (!on) closeDevPanel();
+}
+function openDevPanel() {
+  $("#devPanel").classList.add("open");
+  $("#devPanel").setAttribute("aria-hidden", "false");
+  if (!logTimer) { pumpLogs(); logTimer = setInterval(pumpLogs, 500); }
+}
+function closeDevPanel() {
+  $("#devPanel").classList.remove("open");
+  $("#devPanel").setAttribute("aria-hidden", "true");
+  if (logTimer) { clearInterval(logTimer); logTimer = null; }
+}
+async function pumpLogs() {
+  const rows = await api("get_logs", logLastId);
+  if (!rows || !rows.length) return;
+  const box = $("#devLog");
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  for (const e of rows) {
+    logLastId = Math.max(logLastId, e.id);
+    const line = document.createElement("div");
+    line.className = "dev-line lvl-" + (e.lvl || "info");
+    line.innerHTML = `<span class="dev-time">${e.t}</span><span class="dev-msg">${escapeHtml(e.msg)}</span>`;
+    box.appendChild(line);
+  }
+  while (box.childElementCount > 1500) box.removeChild(box.firstChild);
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+async function clearLogs() {
+  await api("clear_logs");
+  logLastId = 0;
+  $("#devLog").innerHTML = "";
+}
+function copyLogs() {
+  const txt = [...$("#devLog").children]
+    .map(l => l.textContent.replace(/\s+/, " ")).join("\n");
+  navigator.clipboard?.writeText(txt).catch(() => {});
 }
 function toggleSettings(force) {
   const open = force ?? !$("#settingsPanel").classList.contains("open");
@@ -408,6 +455,16 @@ function wireUI() {
     $("#metaSwitch").setAttribute("aria-checked", !on);
     api("save_settings", { disable_metadata: !on });
   });
+  $("#devSwitch").addEventListener("click", () => {
+    const on = $("#devSwitch").getAttribute("aria-checked") === "true";
+    setDevMode(!on);
+    api("save_settings", { dev_mode: !on });
+  });
+  $("#devBtn").addEventListener("click", () =>
+    $("#devPanel").classList.contains("open") ? closeDevPanel() : openDevPanel());
+  $("#devClose").addEventListener("click", closeDevPanel);
+  $("#devClear").addEventListener("click", clearLogs);
+  $("#devCopy").addEventListener("click", copyLogs);
   $("#subSelect").addEventListener("change", e =>
     api("save_settings", { subtitles: e.target.value }));
   $("#folderBtn").addEventListener("click", async () => {

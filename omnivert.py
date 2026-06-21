@@ -13,10 +13,12 @@ import os
 import sys
 import json
 import glob
+import time
 import queue
 import shutil
 import socket
 import threading
+import collections
 import subprocess
 from pathlib import Path
 
@@ -67,7 +69,44 @@ DEFAULT_SETTINGS = {
     "out_dir": DEFAULT_OUT,
     "subtitles": "none",       # "none" or a language code
     "disable_metadata": False,
+    "dev_mode": False,
 }
+
+
+# --------------------------------------------------------------------------- #
+# In-memory log (for the dev panel)
+# --------------------------------------------------------------------------- #
+_LOG = collections.deque(maxlen=3000)
+_LOG_SEQ = 0
+_LOG_LOCK = threading.Lock()
+
+
+def log(level, msg):
+    """Append a line to the dev log buffer."""
+    global _LOG_SEQ
+    text = str(msg).rstrip()
+    if not text:
+        return
+    with _LOG_LOCK:
+        _LOG_SEQ += 1
+        _LOG.append({"id": _LOG_SEQ, "t": time.strftime("%H:%M:%S"),
+                     "lvl": level, "msg": text})
+
+
+class _YtLog:
+    """Routes yt-dlp's own messages into the dev log."""
+    def debug(self, m):
+        if m and not m.startswith("[debug] ") and m.strip():
+            log("info", m)
+
+    def info(self, m):
+        log("info", m)
+
+    def warning(self, m):
+        log("warn", m)
+
+    def error(self, m):
+        log("error", m)
 
 
 def config_path() -> str:
@@ -81,7 +120,8 @@ def config_path() -> str:
 
 def load_settings() -> dict:
     try:
-        with open(config_path(), encoding="utf-8") as f:
+        # utf-8-sig tolerates a byte-order mark if the file was written by another tool.
+        with open(config_path(), encoding="utf-8-sig") as f:
             return {**DEFAULT_SETTINGS, **json.load(f)}
     except Exception:
         return dict(DEFAULT_SETTINGS)
@@ -188,6 +228,20 @@ class Api:
         self._ytdlp_ready.wait(timeout=30)
         return True
 
+    # ---- dev logs ---------------------------------------------------------- #
+    def get_logs(self, since=0):
+        try:
+            since = int(since)
+        except (TypeError, ValueError):
+            since = 0
+        with _LOG_LOCK:
+            return [e for e in _LOG if e["id"] > since]
+
+    def clear_logs(self):
+        with _LOG_LOCK:
+            _LOG.clear()
+        return True
+
     # ---- settings ---------------------------------------------------------- #
     def get_settings(self):
         return self.settings
@@ -218,9 +272,10 @@ class Api:
             return {"ok": False, "error": "empty"}
         if url in self.probe_cache:
             return self.probe_cache[url]
-        opts = {"quiet": True, "no_warnings": True, "skip_download": True,
-                "noplaylist": True, "socket_timeout": 15,
-                "retries": 1, "extractor_retries": 1, "fragment_retries": 1}
+        log("info", f"Probing: {url}")
+        opts = {"quiet": True, "skip_download": True, "noplaylist": True,
+                "socket_timeout": 20, "retries": 3, "extractor_retries": 3,
+                "fragment_retries": 3, "logger": _YtLog()}
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -255,8 +310,11 @@ class Api:
                 "is_audio": is_audio,
             }
             self.probe_cache[url] = result
+            log("ok", f"Probe ok: {result['title']} "
+                      f"[{result['extractor']}, audio_only={is_audio}]")
             return result
         except Exception as e:
+            log("error", f"Probe failed: {e}")
             return {"ok": False, "url": url, "error": _friendly_error(str(e))}
 
     # ---- queue ------------------------------------------------------------- #
@@ -387,27 +445,33 @@ class Api:
                 if jid in self.paused or job.get("status") == "paused":
                     continue           # held; resume_job will re-queue it
                 job["status"] = "downloading"
+            title = job.get("title") or job.get("url")
+            log("info", f"Download start [{job.get('mode')}]: {title}")
             try:
                 self._download(job)
                 with self.lock:
                     if self.jobs.get(jid):
                         self.jobs[jid]["status"] = "done"
                         self.jobs[jid]["pct"] = 100
+                log("ok", f"Done: {title}")
             except _Paused:
                 with self.lock:
                     if self.jobs.get(jid):
                         self.jobs[jid]["status"] = "paused"   # keep the .part file
                 self.paused.discard(jid)
+                log("warn", f"Paused: {title}")
             except _Cancelled:
                 self._cleanup_partials(job)                    # delete partials
                 with self.lock:
                     self.jobs.pop(jid, None)
                 self.cancelled.discard(jid)
+                log("warn", f"Cancelled: {title}")
             except Exception as e:
                 with self.lock:
                     if self.jobs.get(jid):
                         self.jobs[jid]["status"] = "error"
                         self.jobs[jid]["error"] = _friendly_error(str(e))
+                log("error", f"Download failed: {e}")
 
     def _build_opts(self, job):
         o = job.get("opts", {}) or {}
@@ -418,7 +482,7 @@ class Api:
             "progress_hooks": [lambda d: self._hook(job, d)],
             "noprogress": True,
             "quiet": True,
-            "no_warnings": True,
+            "logger": _YtLog(),
             "ignoreerrors": False,
             "windowsfilenames": True,
             "noplaylist": True,
@@ -613,6 +677,7 @@ def main():
         sys.exit(0)
 
     api = Api()
+    log("info", f"Omnivert started (ffmpeg: {'found' if FFMPEG_DIR else 'missing'})")
     window = webview.create_window(
         APP_NAME,
         url=resource_path(os.path.join("web", "index.html")),
