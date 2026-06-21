@@ -582,7 +582,24 @@ def _instance_listener(sock):
         _raise_existing_window()
 
 
+def _unblock_bundle():
+    """Strip 'Mark of the Web' (Zone.Identifier) from our bundled files so .NET
+    can load Python.Runtime.dll even when the app was extracted from a
+    downloaded zip. Without this, pywebview's pythonnet backend fails with
+    'Failed to resolve Python.Runtime.Loader.Initialize'. Frozen .exe only."""
+    if not getattr(sys, "frozen", False):
+        return
+    base = os.path.dirname(os.path.abspath(sys.executable))   # the app folder
+    for root, _dirs, files in os.walk(base):
+        for name in files:
+            try:
+                os.remove(os.path.join(root, name) + ":Zone.Identifier")
+            except OSError:
+                pass
+
+
 def main():
+    _unblock_bundle()
     lock = acquire_single_instance()
     if lock is None:
         sys.exit(0)
