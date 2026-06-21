@@ -13,7 +13,13 @@ Omnivert.exe
 Outputs/
 
 # Local/editor junk
+Run Omnivert (dev).bat
+icon_preview.png
 _screenshot.png
+_crop.png
+_win.png
+_out.log
+_err.log
 .claude/
 .vscode/
 .idea/

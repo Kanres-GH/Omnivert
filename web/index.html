@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omnivert</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="mode-video">
+
+  <!-- ===================== Header ===================== -->
+  <header class="topbar">
+    <div class="logo" id="logo">
+      <img class="logo-img" src="logo.png" alt="Omnivert">
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-mode="video">video</button>
+      <button class="tab" data-mode="audio">audio</button>
+      <span class="tab-glider" id="tabGlider"></span>
+    </div>
+
+    <button class="gear" id="gearBtn" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M19.14 12.94a7.49 7.49 0 0 0 .05-.94 7.49 7.49 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.21 8.8a.5.5 0 0 0 .12.64l2.03 1.58c-.03.31-.05.62-.05.94 0 .32.02.63.05.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.32.66.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.24.1.52.02.66-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.05-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg>
+    </button>
+
+    <!-- ===================== Settings dropdown ===================== -->
+    <div class="settings-panel" id="settingsPanel" aria-hidden="true">
+      <div class="set-grid">
+        <div class="set-block">
+          <label>Theme</label>
+          <button class="switch" id="themeSwitch" role="switch" aria-checked="false">
+            <span class="switch-track"></span>
+            <span class="switch-thumb">
+              <svg class="ic-moon" viewBox="0 0 24 24"><path fill="currentColor" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+              <svg class="ic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="6.7" y2="17.3"/><line x1="17.3" y1="6.7" x2="19.1" y2="4.9"/></g></svg>
+            </span>
+          </button>
+        </div>
+
+        <div class="set-block">
+          <label>Disable file metadata</label>
+          <button class="switch danger" id="metaSwitch" role="switch" aria-checked="false">
+            <span class="switch-track"></span>
+            <span class="switch-thumb"></span>
+          </button>
+        </div>
+
+        <div class="set-block">
+          <label>Preferred subtitles (video)</label>
+          <div class="select-wrap">
+            <select id="subSelect">
+              <option value="none">none</option>
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="ru">Russian</option>
+              <option value="ja">Japanese</option>
+              <option value="ko">Korean</option>
+              <option value="zh">Chinese</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="set-block">
+          <label class="muted-label">Language</label>
+          <div class="select-wrap disabled">
+            <select disabled><option>English</option></select>
+          </div>
+        </div>
+
+        <div class="set-block wide">
+          <label>Output path</label>
+          <div class="path-row">
+            <input type="text" id="outPath" readonly>
+            <button class="icon-btn" id="folderBtn" title="Choose folder">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2Z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== Queue ===================== -->
+  <main class="queue-area">
+    <div class="empty-state" id="emptyState">nothing here yet. give it a try!</div>
+    <div class="queue-list" id="queueList"></div>
+  </main>
+
+  <div class="clear-row" id="clearRow">
+    <div class="queue-divider"></div>
+    <button class="clear-btn" id="clearBtn">
+      <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6 6.4 5Z"/></svg>
+      Clear
+    </button>
+  </div>
+
+  <!-- ===================== Input + options ===================== -->
+  <footer class="dock">
+    <div class="paste-row">
+      <div class="paste-box" id="pasteBox">
+        <svg class="link-ic" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M10.6 13.4a1 1 0 0 0 1.4 0l3-3a3 3 0 1 0-4.2-4.2l-1 1a1 1 0 1 0 1.4 1.4l1-1a1 1 0 0 1 1.4 1.4l-3 3a1 1 0 0 0 0 1.4Zm2.8-2.8a1 1 0 0 0-1.4 0l-3 3a3 3 0 1 0 4.2 4.2l1-1a1 1 0 1 0-1.4-1.4l-1 1a1 1 0 0 1-1.4-1.4l3-3a1 1 0 0 0 0-1.4Z"/></svg>
+        <input type="text" id="urlInput" placeholder="Paste the link here..." spellcheck="false" autocomplete="off">
+        <span class="probe-spinner" id="probeSpinner"></span>
+      </div>
+      <button class="download-btn" id="downloadBtn" title="Download">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4l3.3 3.3V4a1 1 0 0 1 1-1Zm-7 16a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1Z"/></svg>
+      </button>
+    </div>
+
+    <!-- Video options -->
+    <div class="options" id="videoOptions">
+      <div class="opt"><label>Quality</label>
+        <div class="select-wrap"><select id="vQuality">
+          <option value="best">Best (auto)</option>
+          <option value="2160">2160p</option>
+          <option value="1440">1440p</option>
+          <option value="1080">1080p</option>
+          <option value="720">720p</option>
+          <option value="480">480p</option>
+        </select></div>
+      </div>
+      <div class="opt"><label>Codec</label>
+        <div class="select-wrap"><select id="vCodec">
+          <option value="auto">Auto</option>
+          <option value="h264">H.264</option>
+          <option value="vp9">VP9</option>
+          <option value="av1">AV1</option>
+        </select></div>
+      </div>
+      <div class="opt"><label>Container</label>
+        <div class="select-wrap"><select id="vContainer">
+          <option value="mp4">.mp4</option>
+          <option value="mkv">.mkv</option>
+          <option value="webm">.webm</option>
+        </select></div>
+      </div>
+    </div>
+
+    <!-- Audio options -->
+    <div class="options hidden" id="audioOptions">
+      <div class="opt"><label>Container</label>
+        <div class="select-wrap"><select id="aContainer">
+          <option value="mp3">.mp3</option>
+          <option value="m4a">.m4a</option>
+          <option value="opus">.opus</option>
+          <option value="wav">.wav</option>
+          <option value="flac">.flac</option>
+        </select></div>
+      </div>
+      <div class="opt"><label>Quality</label>
+        <div class="select-wrap"><select id="aQuality">
+          <option value="320">320 kbps</option>
+          <option value="256" selected>256 kbps</option>
+          <option value="192">192 kbps</option>
+          <option value="128">128 kbps</option>
+        </select></div>
+      </div>
+    </div>
+
+    <div class="footlinks">
+      <a href="#" id="webVersion">web version</a>
+      <a href="#" id="feedback">provide feedback</a>
+    </div>
+  </footer>
+
+  <!-- ===================== Modal (confirm / prompt / alert) ===================== -->
+  <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+    <div class="modal">
+      <p class="modal-title" id="modalTitle"></p>
+      <p class="modal-text" id="modalText"></p>
+      <div class="modal-actions" id="modalActions"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

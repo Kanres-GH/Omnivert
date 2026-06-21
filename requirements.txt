@@ -1,6 +1,6 @@
 # Runtime
 yt-dlp>=2025.1.1
-customtkinter>=5.2.2
+pywebview>=6.0          # native window hosting the web UI (uses Edge WebView2 on Windows)
 
 # Build-time (only needed to (re)build the .exe and icon)
 pillow>=10.0.0
