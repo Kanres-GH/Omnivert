@@ -430,15 +430,18 @@ function wireUI() {
 
 function hideLoader() { const el = $("#loader"); if (el) el.classList.add("hidden"); }
 
-const LOADER_MIN_MS = 1500;            // keep the loader up at least this long
-const loaderStart = Date.now();        // ≈ when the page (and loader) first renders
+const LOADER_MIN_MS = 700;             // smallest visible time, so it never just flashes
+const loaderStart = Date.now();
 
 let booted = false;
 async function boot() {
   if (booted) return;
   booted = true;
-  await api("warm_up");          // front-load yt-dlp while the loader is up
-  await loadSettings();          // apply theme/folder before revealing the UI
+  // These are real round-trips to Python. They only resolve once the WebView2
+  // <-> Python bridge is actually responsive, so the loader stays up until the
+  // UI is genuinely interactive (not a fixed timer that can reveal a frozen UI).
+  await loadSettings();          // applies theme/folder before the UI is shown
+  await api("warm_up");          // resolves when yt-dlp has finished importing
   setTimeout(hideLoader, Math.max(0, LOADER_MIN_MS - (Date.now() - loaderStart)));
 }
 
@@ -447,5 +450,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (PY()) boot();
 });
 window.addEventListener("pywebviewready", boot);
-// Fallback so the UI always appears even if the API never connects (e.g. preview).
-setTimeout(() => { if (!booted) hideLoader(); }, 1500);
+// Reveal anyway if pywebview is genuinely absent (e.g. opened in a plain browser).
+setTimeout(() => { if (!booted && !PY()) hideLoader(); }, 2500);
+// Absolute safety net so the loader can never get stuck forever.
+setTimeout(() => { if (!booted) hideLoader(); }, 30000);

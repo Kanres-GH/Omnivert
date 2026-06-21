@@ -168,16 +168,24 @@ class Api:
         self.probe_cache: dict[str, dict] = {}
         self.info_cache: dict[str, dict] = {}
         self.settings = load_settings()
+        self._ytdlp_ready = threading.Event()
         threading.Thread(target=self._worker, daemon=True).start()
+        # Import yt-dlp now, in the background, in parallel with WebView2 startup.
+        threading.Thread(target=self._preimport, daemon=True).start()
 
     # ---- lifecycle --------------------------------------------------------- #
-    def warm_up(self):
-        """Front-load the heavy yt-dlp import while the loader is showing, so the
-        first download starts quickly. Runs on a worker thread (non-blocking)."""
+    def _preimport(self):
         try:
             import yt_dlp  # noqa: F401
         except Exception:
             pass
+        finally:
+            self._ytdlp_ready.set()
+
+    def warm_up(self):
+        """Called by the loader. Returns once the UI is truly ready: the bridge
+        has answered this round-trip and yt-dlp has finished importing."""
+        self._ytdlp_ready.wait(timeout=30)
         return True
 
     # ---- settings ---------------------------------------------------------- #
