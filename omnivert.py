@@ -170,6 +170,16 @@ class Api:
         self.settings = load_settings()
         threading.Thread(target=self._worker, daemon=True).start()
 
+    # ---- lifecycle --------------------------------------------------------- #
+    def warm_up(self):
+        """Front-load the heavy yt-dlp import while the loader is showing, so the
+        first download starts quickly. Runs on a worker thread (non-blocking)."""
+        try:
+            import yt_dlp  # noqa: F401
+        except Exception:
+            pass
+        return True
+
     # ---- settings ---------------------------------------------------------- #
     def get_settings(self):
         return self.settings
@@ -583,7 +593,7 @@ def main():
         url=resource_path(os.path.join("web", "index.html")),
         js_api=api,
         width=520, height=820, min_size=(440, 680),
-        background_color="#0e0e10",
+        background_color="#0e0e10",     # dark while WebView2 warms up (no white flash)
     )
     api.window = window
     threading.Thread(target=_instance_listener, args=(lock,), daemon=True).start()

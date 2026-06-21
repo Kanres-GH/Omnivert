@@ -5,9 +5,10 @@ dist/
 __pycache__/
 *.pyc
 
-# The packaged binary (distributed via GitHub Releases, not committed)
+# The packaged app (distributed via GitHub Releases, not committed)
 Omnivert.exe
 *.exe
+Omnivert.zip
 
 # Downloaded media / output
 Outputs/

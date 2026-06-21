@@ -33,7 +33,7 @@ Instagram · TikTok · YouTube (Shorts **and** regular) · Twitter / X · Reddit
 
 ## Download & run
 
-Grab the latest **`Omnivert.exe`** from the [Releases](../../releases) page and double-click it — no install needed.
+Grab the latest **`Omnivert.zip`** from the [Releases](../../releases) page, **extract it anywhere**, and run **`Omnivert.exe`** inside the folder — no install needed. (Keep the `Omnivert.exe` and its `_internal` folder together.)
 
 > Requires **ffmpeg** on your PATH for highest-quality merges (and for Reddit, which serves video/audio separately). Install it once with:
 > ```
@@ -48,16 +48,16 @@ pip install -r requirements.txt
 python omnivert.py
 ```
 
-## Build the .exe yourself
+## Build it yourself
 
 ```bash
-python -m PyInstaller --noconfirm --windowed --onefile --clean ^
+python -m PyInstaller --noconfirm --windowed --clean ^
   --name Omnivert --icon icon.ico ^
   --add-data "icon.ico;." --add-data "web;web" ^
   --collect-all webview omnivert.py
 ```
 
-The result lands in `dist/Omnivert.exe`. (`build.bat` does this in one step.)
+The app lands in `dist/Omnivert/` (run `Omnivert.exe` inside). **`build.bat`** does this and also produces `Omnivert.zip` for distribution.
 
 ### Changing the icon
 

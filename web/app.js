@@ -415,17 +415,37 @@ function wireUI() {
     if (path) $("#outPath").value = path;
   });
 
-  $("#webVersion").addEventListener("click", e => e.preventDefault());
-  $("#feedback").addEventListener("click", e => e.preventDefault());
+  $("#webVersion").addEventListener("click", e => {
+    e.preventDefault();
+    alertDialog("Coming soon", "A web version of Omnivert is on the way.");
+  });
+  $("#feedback").addEventListener("click", e => {
+    e.preventDefault();
+    alertDialog("Coming soon", "Feedback will be available soon.");
+  });
 
   window.addEventListener("resize", positionGlider);
   positionGlider();
 }
 
-function boot() { loadSettings(); }
+function hideLoader() { const el = $("#loader"); if (el) el.classList.add("hidden"); }
+
+const LOADER_MIN_MS = 1500;            // keep the loader up at least this long
+const loaderStart = Date.now();        // ≈ when the page (and loader) first renders
+
+let booted = false;
+async function boot() {
+  if (booted) return;
+  booted = true;
+  await api("warm_up");          // front-load yt-dlp while the loader is up
+  await loadSettings();          // apply theme/folder before revealing the UI
+  setTimeout(hideLoader, Math.max(0, LOADER_MIN_MS - (Date.now() - loaderStart)));
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   wireUI();
   if (PY()) boot();
 });
 window.addEventListener("pywebviewready", boot);
+// Fallback so the UI always appears even if the API never connects (e.g. preview).
+setTimeout(() => { if (!booted) hideLoader(); }, 1500);
